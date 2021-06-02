@@ -1,0 +1,4 @@
+
+[Telegram]
+  PollerTimeout = 10
+  Token = ""
