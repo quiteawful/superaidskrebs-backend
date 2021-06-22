@@ -10,11 +10,19 @@ import (
 //Config is the struct to save and load the config file
 type Config struct {
 	Telegram TelegramConf
+	Databse  DatabaseConf
 }
 
+//TelegramConf holds the token for the bot and the timeout for the poller
 type TelegramConf struct {
 	Token         string
 	PollerTimeout int
+}
+
+//DatabseConf holds the Driver and the Connection string
+type DatabaseConf struct {
+	Driver     string
+	Connection string
 }
 
 //LoadConfig loads the config from the filepath and gives back a Config or an error

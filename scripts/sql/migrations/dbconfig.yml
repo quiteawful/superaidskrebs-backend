@@ -1,0 +1,5 @@
+postgres:
+    dialect: postgres
+    datasource: dbname=superaidskrebs user=superaidskrebs password=superaidskrebs4223 sslmode=disable
+    dir: postgres
+    table: migrations
