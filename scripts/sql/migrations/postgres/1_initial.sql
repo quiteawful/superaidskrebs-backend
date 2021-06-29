@@ -12,9 +12,25 @@ CREATE TABLE "Users" (
 	"Username" VARCHAR(255) NOT NULL,
 	"Email" VARCHAR(255) NOT NULL,
 	"Passwort" VARCHAR(255) NOT NULL,
-	"Right" integer NOT NULL,
-	"ChannelID" integer NOT NULL,
 	CONSTRAINT "Users_pk" PRIMARY KEY ("UserID")
+);
+
+
+
+CREATE TABLE "Activations" (
+	"Time" TIMESTAMP NOT NULL,
+	"Key" VARCHAR(255) NOT NULL,
+	"UserID" integer NOT NULL,
+	CONSTRAINT "Activation_pk" PRIMARY KEY ("Time")
+);
+
+
+
+CREATE TABLE "ChannelhasUsers" (
+	"ChannelID" integer NOT NULL,
+	"UserID" integer NOT NULL,
+	"Right" integer NOT NULL,
+	CONSTRAINT "Channel_Users_pk" PRIMARY KEY ("ChannelID", "UserID")
 );
 
 
@@ -52,10 +68,6 @@ CREATE TABLE "LinkHasTag" (
 );
 
 
-
-
-ALTER TABLE "Users" ADD CONSTRAINT "Users_fk0" FOREIGN KEY ("ChannelID") REFERENCES "Channels"("ChannelID");
-
 ALTER TABLE "Links" ADD CONSTRAINT "Links_fk0" FOREIGN KEY ("ChannelID") REFERENCES "Channels"("ChannelID");
 
 ALTER TABLE "Clicks" ADD CONSTRAINT "Clicks_fk0" FOREIGN KEY ("LinkID") REFERENCES "Links"("LinkID");
@@ -64,8 +76,15 @@ ALTER TABLE "Clicks" ADD CONSTRAINT "Clicks_fk0" FOREIGN KEY ("LinkID") REFERENC
 ALTER TABLE "LinkHasTag" ADD CONSTRAINT "LinkHasTag_fk0" FOREIGN KEY ("LinkID") REFERENCES "Links"("LinkID");
 ALTER TABLE "LinkHasTag" ADD CONSTRAINT "LinkHasTag_fk1" FOREIGN KEY ("TagID") REFERENCES "Tags"("TagID");
 
+ALTER TABLE "ChannelhasUsers" ADD CONSTRAINT "ChannelhasUsers_fk0" FOREIGN KEY ("UserID") REFERENCES "Users"("UserID");
+ALTER TABLE "ChannelhasUsers" ADD CONSTRAINT "ChannelhasUsers_fk1" FOREIGN KEY ("ChannelID") REFERENCES "Channels"("ChannelID");
+
+ALTER TABLE "Activations" ADD CONSTRAINT "Activation_fk0" FOREIGN KEY ("UserID") REFERENCES "Users"("UserID");
+
 -- +migrate Down
 
+DROP TABLE "ChannelhasUsers";
+DROP TABLE "Activations";
 DROP TABLE "Users";
 DROP TABLE "Clicks";
 DROP TABLE "LinkHasTag";

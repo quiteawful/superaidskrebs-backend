@@ -48,52 +48,6 @@ var ChannelTableColumns = struct {
 
 // Generated where
 
-type whereHelperint struct{ field string }
-
-func (w whereHelperint) EQ(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
-func (w whereHelperint) NEQ(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
-func (w whereHelperint) LT(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
-func (w whereHelperint) LTE(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
-func (w whereHelperint) GT(x int) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
-func (w whereHelperint) GTE(x int) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
-func (w whereHelperint) IN(slice []int) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
-}
-func (w whereHelperint) NIN(slice []int) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
-}
-
-type whereHelperstring struct{ field string }
-
-func (w whereHelperstring) EQ(x string) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
-func (w whereHelperstring) NEQ(x string) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
-func (w whereHelperstring) LT(x string) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
-func (w whereHelperstring) LTE(x string) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
-func (w whereHelperstring) GT(x string) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
-func (w whereHelperstring) GTE(x string) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
-func (w whereHelperstring) IN(slice []string) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereIn(fmt.Sprintf("%s IN ?", w.field), values...)
-}
-func (w whereHelperstring) NIN(slice []string) qm.QueryMod {
-	values := make([]interface{}, 0, len(slice))
-	for _, value := range slice {
-		values = append(values, value)
-	}
-	return qm.WhereNotIn(fmt.Sprintf("%s NOT IN ?", w.field), values...)
-}
-
 var ChannelWhere = struct {
 	ChannelID whereHelperint
 	Name      whereHelperstring
@@ -104,17 +58,17 @@ var ChannelWhere = struct {
 
 // ChannelRels is where relationship names are stored.
 var ChannelRels = struct {
-	ChannelIDLinks string
-	ChannelIDUsers string
+	ChannelIDChannelhasUsers string
+	ChannelIDLinks           string
 }{
-	ChannelIDLinks: "ChannelIDLinks",
-	ChannelIDUsers: "ChannelIDUsers",
+	ChannelIDChannelhasUsers: "ChannelIDChannelhasUsers",
+	ChannelIDLinks:           "ChannelIDLinks",
 }
 
 // channelR is where relationships are stored.
 type channelR struct {
-	ChannelIDLinks LinkSlice `boil:"ChannelIDLinks" json:"ChannelIDLinks" toml:"ChannelIDLinks" yaml:"ChannelIDLinks"`
-	ChannelIDUsers UserSlice `boil:"ChannelIDUsers" json:"ChannelIDUsers" toml:"ChannelIDUsers" yaml:"ChannelIDUsers"`
+	ChannelIDChannelhasUsers ChannelhasUserSlice `boil:"ChannelIDChannelhasUsers" json:"ChannelIDChannelhasUsers" toml:"ChannelIDChannelhasUsers" yaml:"ChannelIDChannelhasUsers"`
+	ChannelIDLinks           LinkSlice           `boil:"ChannelIDLinks" json:"ChannelIDLinks" toml:"ChannelIDLinks" yaml:"ChannelIDLinks"`
 }
 
 // NewStruct creates a new relationship struct
@@ -407,6 +361,27 @@ func (q channelQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bo
 	return count > 0, nil
 }
 
+// ChannelIDChannelhasUsers retrieves all the ChannelhasUser's ChannelhasUsers with an executor via ChannelID column.
+func (o *Channel) ChannelIDChannelhasUsers(mods ...qm.QueryMod) channelhasUserQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"ChannelhasUsers\".\"ChannelID\"=?", o.ChannelID),
+	)
+
+	query := ChannelhasUsers(queryMods...)
+	queries.SetFrom(query.Query, "\"ChannelhasUsers\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"ChannelhasUsers\".*"})
+	}
+
+	return query
+}
+
 // ChannelIDLinks retrieves all the Link's Links with an executor via ChannelID column.
 func (o *Channel) ChannelIDLinks(mods ...qm.QueryMod) linkQuery {
 	var queryMods []qm.QueryMod
@@ -428,25 +403,102 @@ func (o *Channel) ChannelIDLinks(mods ...qm.QueryMod) linkQuery {
 	return query
 }
 
-// ChannelIDUsers retrieves all the User's Users with an executor via ChannelID column.
-func (o *Channel) ChannelIDUsers(mods ...qm.QueryMod) userQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
+// LoadChannelIDChannelhasUsers allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (channelL) LoadChannelIDChannelhasUsers(ctx context.Context, e boil.ContextExecutor, singular bool, maybeChannel interface{}, mods queries.Applicator) error {
+	var slice []*Channel
+	var object *Channel
+
+	if singular {
+		object = maybeChannel.(*Channel)
+	} else {
+		slice = *maybeChannel.(*[]*Channel)
 	}
 
-	queryMods = append(queryMods,
-		qm.Where("\"Users\".\"ChannelID\"=?", o.ChannelID),
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &channelR{}
+		}
+		args = append(args, object.ChannelID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &channelR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ChannelID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ChannelID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`ChannelhasUsers`),
+		qm.WhereIn(`ChannelhasUsers.ChannelID in ?`, args...),
 	)
-
-	query := Users(queryMods...)
-	queries.SetFrom(query.Query, "\"Users\"")
-
-	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"Users\".*"})
+	if mods != nil {
+		mods.Apply(query)
 	}
 
-	return query
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load ChannelhasUsers")
+	}
+
+	var resultSlice []*ChannelhasUser
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice ChannelhasUsers")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on ChannelhasUsers")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for ChannelhasUsers")
+	}
+
+	if len(channelhasUserAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.ChannelIDChannelhasUsers = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &channelhasUserR{}
+			}
+			foreign.R.ChannelIDChannel = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ChannelID == foreign.ChannelID {
+				local.R.ChannelIDChannelhasUsers = append(local.R.ChannelIDChannelhasUsers, foreign)
+				if foreign.R == nil {
+					foreign.R = &channelhasUserR{}
+				}
+				foreign.R.ChannelIDChannel = local
+				break
+			}
+		}
+	}
+
+	return nil
 }
 
 // LoadChannelIDLinks allows an eager lookup of values, cached into the
@@ -547,101 +599,56 @@ func (channelL) LoadChannelIDLinks(ctx context.Context, e boil.ContextExecutor, 
 	return nil
 }
 
-// LoadChannelIDUsers allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (channelL) LoadChannelIDUsers(ctx context.Context, e boil.ContextExecutor, singular bool, maybeChannel interface{}, mods queries.Applicator) error {
-	var slice []*Channel
-	var object *Channel
+// AddChannelIDChannelhasUsers adds the given related objects to the existing relationships
+// of the Channel, optionally inserting them as new records.
+// Appends related to o.R.ChannelIDChannelhasUsers.
+// Sets related.R.ChannelIDChannel appropriately.
+func (o *Channel) AddChannelIDChannelhasUsers(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*ChannelhasUser) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.ChannelID = o.ChannelID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"ChannelhasUsers\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"ChannelID"}),
+				strmangle.WhereClause("\"", "\"", 2, channelhasUserPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ChannelID, rel.ChannelID, rel.UserID}
 
-	if singular {
-		object = maybeChannel.(*Channel)
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.ChannelID = o.ChannelID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &channelR{
+			ChannelIDChannelhasUsers: related,
+		}
 	} else {
-		slice = *maybeChannel.(*[]*Channel)
+		o.R.ChannelIDChannelhasUsers = append(o.R.ChannelIDChannelhasUsers, related...)
 	}
 
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &channelR{}
-		}
-		args = append(args, object.ChannelID)
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &channelR{}
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &channelhasUserR{
+				ChannelIDChannel: o,
 			}
-
-			for _, a := range args {
-				if a == obj.ChannelID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.ChannelID)
+		} else {
+			rel.R.ChannelIDChannel = o
 		}
 	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(
-		qm.From(`Users`),
-		qm.WhereIn(`Users.ChannelID in ?`, args...),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load Users")
-	}
-
-	var resultSlice []*User
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice Users")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on Users")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for Users")
-	}
-
-	if len(userAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-	if singular {
-		object.R.ChannelIDUsers = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &userR{}
-			}
-			foreign.R.ChannelIDChannel = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if local.ChannelID == foreign.ChannelID {
-				local.R.ChannelIDUsers = append(local.R.ChannelIDUsers, foreign)
-				if foreign.R == nil {
-					foreign.R = &userR{}
-				}
-				foreign.R.ChannelIDChannel = local
-				break
-			}
-		}
-	}
-
 	return nil
 }
 
@@ -689,59 +696,6 @@ func (o *Channel) AddChannelIDLinks(ctx context.Context, exec boil.ContextExecut
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &linkR{
-				ChannelIDChannel: o,
-			}
-		} else {
-			rel.R.ChannelIDChannel = o
-		}
-	}
-	return nil
-}
-
-// AddChannelIDUsers adds the given related objects to the existing relationships
-// of the Channel, optionally inserting them as new records.
-// Appends related to o.R.ChannelIDUsers.
-// Sets related.R.ChannelIDChannel appropriately.
-func (o *Channel) AddChannelIDUsers(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*User) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			rel.ChannelID = o.ChannelID
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"Users\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"ChannelID"}),
-				strmangle.WhereClause("\"", "\"", 2, userPrimaryKeyColumns),
-			)
-			values := []interface{}{o.ChannelID, rel.UserID}
-
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			rel.ChannelID = o.ChannelID
-		}
-	}
-
-	if o.R == nil {
-		o.R = &channelR{
-			ChannelIDUsers: related,
-		}
-	} else {
-		o.R.ChannelIDUsers = append(o.R.ChannelIDUsers, related...)
-	}
-
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &userR{
 				ChannelIDChannel: o,
 			}
 		} else {

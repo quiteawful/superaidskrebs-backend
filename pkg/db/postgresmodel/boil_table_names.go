@@ -4,17 +4,21 @@
 package postgresmodel
 
 var TableNames = struct {
-	Channels   string
-	Clicks     string
-	LinkHasTag string
-	Links      string
-	Tags       string
-	Users      string
+	Activations     string
+	ChannelhasUsers string
+	Channels        string
+	Clicks          string
+	LinkHasTag      string
+	Links           string
+	Tags            string
+	Users           string
 }{
-	Channels:   "Channels",
-	Clicks:     "Clicks",
-	LinkHasTag: "LinkHasTag",
-	Links:      "Links",
-	Tags:       "Tags",
-	Users:      "Users",
+	Activations:     "Activations",
+	ChannelhasUsers: "ChannelhasUsers",
+	Channels:        "Channels",
+	Clicks:          "Clicks",
+	LinkHasTag:      "LinkHasTag",
+	Links:           "Links",
+	Tags:            "Tags",
+	Users:           "Users",
 }
