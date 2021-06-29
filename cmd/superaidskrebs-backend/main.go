@@ -14,9 +14,12 @@ func main() {
 		log.Fatalln("Error loading config:", err.Error())
 	}
 
-	db, err := db.Initialisation(conf.Databse)
+	db, err := db.Initialisation(conf.Database)
+	if err != nil {
+		log.Fatal("Error initalizing Database:", err.Error())
+	}
 
-	bot, err := superaidskrebsbot.CreateNewBot(conf.Telegram)
+	bot, err := superaidskrebsbot.CreateNewBot(conf.Telegram, db)
 	if err != nil {
 		log.Fatalln("Error creating new bot:", err.Error())
 	}

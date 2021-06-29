@@ -7,12 +7,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/quiteawful/superaidskrebs-backend/pkg/config"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
 type SAKBot struct {
 	bot *tb.Bot
+	db  *sqlx.DB
 }
 
 func logMessageError(err error) {
@@ -61,13 +63,14 @@ func (s *SAKBot) HandlePictures(m *tb.Message) {
 	logMessageError(err)
 }
 
-func CreateNewBot(config config.TelegramConf) (*SAKBot, error) {
+func CreateNewBot(config config.TelegramConf, db *sqlx.DB) (*SAKBot, error) {
 	var sakbot SAKBot
 	var err error
 	sakbot.bot, err = tb.NewBot(tb.Settings{
 		Token:  config.Token,
 		Poller: &tb.LongPoller{Timeout: time.Duration(config.PollerTimeout) * time.Second},
 	})
+	sakbot.db = db
 	if err != nil {
 		return nil, errors.New("Error creating bot:" + err.Error())
 	}

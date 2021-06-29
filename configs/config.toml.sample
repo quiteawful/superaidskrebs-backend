@@ -1,4 +1,7 @@
-
 [Telegram]
   PollerTimeout = 10
   Token = ""
+
+[Database]
+  Driver = "postgres"
+  Connection =  "postgres://superaidskrebs:superaidskrebs2342@localhost:5432/superaidskrebs"

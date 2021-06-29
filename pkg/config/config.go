@@ -10,7 +10,7 @@ import (
 //Config is the struct to save and load the config file
 type Config struct {
 	Telegram TelegramConf
-	Databse  DatabaseConf
+	Database DatabaseConf
 }
 
 //TelegramConf holds the token for the bot and the timeout for the poller

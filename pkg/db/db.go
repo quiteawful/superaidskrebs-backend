@@ -6,9 +6,11 @@ import (
 
 	"github.com/gobuffalo/packr/v2"
 	"github.com/jmoiron/sqlx"
-	"github.com/quiteawful/superaidskrebs-backend/internal/packer"
 	"github.com/quiteawful/superaidskrebs-backend/pkg/config"
 	migrate "github.com/rubenv/sql-migrate"
+
+	//Postgres Driver
+	_ "github.com/jackc/pgx/stdlib"
 )
 
 const (
@@ -26,15 +28,8 @@ func Initialisation(dbc config.DatabaseConf) (*sqlx.DB, error) {
 		return nil, errors.New("Error connecting to database:" + err.Error())
 	}
 
-	var migbox *packr.Box
-
-	switch dbc.Driver {
-	case "postgres":
-		migbox = packer.PostgresBox
-	}
-
 	migrations := &migrate.PackrMigrationSource{
-		Box: migbox,
+		Box: packr.New("psqlmigrations", "../../scripts/sql/migrations/postgres"),
 		Dir: "./",
 	}
 	migrate.SetTable("migrations")
