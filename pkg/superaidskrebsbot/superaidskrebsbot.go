@@ -3,8 +3,6 @@ package superaidskrebsbot
 import (
 	"errors"
 	"log"
-	"net/mail"
-	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -13,19 +11,15 @@ import (
 )
 
 type SAKBot struct {
-	bot *tb.Bot
-	db  *sqlx.DB
+	bot       *tb.Bot
+	db        *sqlx.DB
+	filestore config.FilestoreConf
 }
 
 func logMessageError(err error) {
 	if err != nil {
 		log.Println("Error sending message:", err)
 	}
-}
-
-func validateEmail(email string) bool {
-	_, err := mail.ParseAddress(email)
-	return err == nil
 }
 
 func (s *SAKBot) sendErrorarguments(User *tb.User, errormessage string) {
@@ -37,18 +31,9 @@ func (s *SAKBot) sendWrongarguments(User *tb.User, usage string) {
 	s.sendErrorarguments(User, "Wrong amount of arguments. Usage:"+usage)
 }
 
-func (s *SAKBot) HandleRegister(m *tb.Message) {
-	if !m.FromChannel() {
-		mysplit := strings.Split(m.Text, " ")
-		if len(mysplit) != 3 {
-			s.sendWrongarguments(m.Sender, "/register emailadress password")
-			return
-		}
-		if !validateEmail(mysplit[1]) {
-			s.sendErrorarguments(m.Sender, "Email Address not Vaild")
-			return
-		}
-	}
+func (s *SAKBot) sendMessagetoUser(User *tb.User, message string) {
+	_, err := s.bot.Send(User, message)
+	logMessageError(err)
 }
 
 func (s *SAKBot) HandleMessages(m *tb.Message) {
@@ -63,19 +48,20 @@ func (s *SAKBot) HandlePictures(m *tb.Message) {
 	logMessageError(err)
 }
 
-func CreateNewBot(config config.TelegramConf, db *sqlx.DB) (*SAKBot, error) {
+func CreateNewBot(config config.TelegramConf, db *sqlx.DB, filestoreconf config.FilestoreConf) (*SAKBot, error) {
 	var sakbot SAKBot
 	var err error
 	sakbot.bot, err = tb.NewBot(tb.Settings{
 		Token:  config.Token,
 		Poller: &tb.LongPoller{Timeout: time.Duration(config.PollerTimeout) * time.Second},
 	})
-	sakbot.db = db
 	if err != nil {
 		return nil, errors.New("Error creating bot:" + err.Error())
 	}
+	sakbot.db = db
+	sakbot.filestore = filestoreconf
 
-	sakbot.bot.Handle("/register", sakbot.HandleRegister)
+	sakbot.bot.Handle("/user", sakbot.handleUserCommands)
 	sakbot.bot.Handle(tb.OnText, sakbot.HandleMessages)
 	sakbot.bot.Handle(tb.OnPhoto, sakbot.HandlePictures)
 

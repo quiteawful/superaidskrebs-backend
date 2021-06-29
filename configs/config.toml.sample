@@ -5,3 +5,20 @@
 [Database]
   Driver = "postgres"
   Connection =  "postgres://superaidskrebs:superaidskrebs2342@localhost:5432/superaidskrebs"
+
+[Filestore]
+  Dir = "/var/superaidskrebs"
+  Count = 100
+
+[Mail]
+  From = "superaidskrebs@localhost"
+  Password = "superaidskrebs"
+  SMTPHost = "localhost"
+  SMTPPort = 587
+
+[Argon]
+	Memory = 65536
+	Iterations = 3
+	Parallelism = 2
+	SaltLength = 16
+	KeyLength = 32
