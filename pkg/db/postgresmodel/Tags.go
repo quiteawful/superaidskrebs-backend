@@ -23,8 +23,8 @@ import (
 
 // Tag is an object representing the database table.
 type Tag struct {
-	TagID int `boil:"TagID" json:"TagID" toml:"TagID" yaml:"TagID"`
-	Name  int `boil:"Name" json:"Name" toml:"Name" yaml:"Name"`
+	TagID int    `boil:"TagID" json:"TagID" toml:"TagID" yaml:"TagID"`
+	Name  string `boil:"Name" json:"Name" toml:"Name" yaml:"Name"`
 
 	R *tagR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L tagL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -50,10 +50,10 @@ var TagTableColumns = struct {
 
 var TagWhere = struct {
 	TagID whereHelperint
-	Name  whereHelperint
+	Name  whereHelperstring
 }{
 	TagID: whereHelperint{field: "\"Tags\".\"TagID\""},
-	Name:  whereHelperint{field: "\"Tags\".\"Name\""},
+	Name:  whereHelperstring{field: "\"Tags\".\"Name\""},
 }
 
 // TagRels is where relationship names are stored.

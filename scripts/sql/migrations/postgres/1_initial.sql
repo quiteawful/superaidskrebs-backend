@@ -1,7 +1,7 @@
 -- +migrate Up
 CREATE TABLE "Channels" (
 	"ChannelID" serial NOT NULL,
-	"Name" VARCHAR(255) NOT NULL,
+	"Name" TEXT NOT NULL,
 	CONSTRAINT "Channels_pk" PRIMARY KEY ("ChannelID")
 );
 
@@ -9,19 +9,20 @@ CREATE TABLE "Channels" (
 
 CREATE TABLE "Users" (
 	"UserID" serial NOT NULL,
-	"Username" VARCHAR(255) NOT NULL,
-	"Email" VARCHAR(255) NOT NULL,
-	"Passwort" VARCHAR(255) NOT NULL,
+	"Username" TEXT NOT NULL,
+	"Email" TEXT NOT NULL,
+	"Passwort" TEXT NOT NULL,
 	CONSTRAINT "Users_pk" PRIMARY KEY ("UserID")
 );
 
 
 
-CREATE TABLE "Activations" (
+CREATE TABLE "OnetimePads" (
 	"Time" TIMESTAMP NOT NULL,
-	"Key" VARCHAR(255) NOT NULL,
+	"Key" TEXT NOT NULL,
 	"UserID" integer NOT NULL,
-	CONSTRAINT "Activation_pk" PRIMARY KEY ("Time")
+	"Type" TEXT NOT NULL,
+	CONSTRAINT "OnetimePads_pk" PRIMARY KEY ("Time")
 );
 
 
@@ -29,7 +30,7 @@ CREATE TABLE "Activations" (
 CREATE TABLE "ChannelhasUsers" (
 	"ChannelID" integer NOT NULL,
 	"UserID" integer NOT NULL,
-	"Right" integer NOT NULL,
+	"Right" TEXT NOT NULL,
 	CONSTRAINT "Channel_Users_pk" PRIMARY KEY ("ChannelID", "UserID")
 );
 
@@ -55,7 +56,7 @@ CREATE TABLE "Clicks" (
 
 CREATE TABLE "Tags" (
 	"TagID" serial NOT NULL,
-	"Name" integer NOT NULL,
+	"Name" TEXT NOT NULL,
 	CONSTRAINT "Tags_pk" PRIMARY KEY ("TagID")
 );
 
@@ -79,12 +80,12 @@ ALTER TABLE "LinkHasTag" ADD CONSTRAINT "LinkHasTag_fk1" FOREIGN KEY ("TagID") R
 ALTER TABLE "ChannelhasUsers" ADD CONSTRAINT "ChannelhasUsers_fk0" FOREIGN KEY ("UserID") REFERENCES "Users"("UserID");
 ALTER TABLE "ChannelhasUsers" ADD CONSTRAINT "ChannelhasUsers_fk1" FOREIGN KEY ("ChannelID") REFERENCES "Channels"("ChannelID");
 
-ALTER TABLE "Activations" ADD CONSTRAINT "Activation_fk0" FOREIGN KEY ("UserID") REFERENCES "Users"("UserID");
+ALTER TABLE "OnetimePads" ADD CONSTRAINT "OnetimePads_fk0" FOREIGN KEY ("UserID") REFERENCES "Users"("UserID");
 
 -- +migrate Down
 
 DROP TABLE "ChannelhasUsers";
-DROP TABLE "Activations";
+DROP TABLE "OnetimePads";
 DROP TABLE "Users";
 DROP TABLE "Clicks";
 DROP TABLE "LinkHasTag";

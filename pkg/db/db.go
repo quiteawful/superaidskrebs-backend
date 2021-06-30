@@ -15,6 +15,14 @@ import (
 
 const (
 	pgDriverName = "pgx"
+
+	RightTypeAdmin = "admin"
+	RightTypeMod   = "mod"
+	RightTypeUser  = "user"
+
+	PadTypeActivation = "activate"
+	PadTypeReset      = "reset"
+	PadTypeAuth       = "auth"
 )
 
 func Initialisation(dbc config.DatabaseConf) (*sqlx.DB, error) {

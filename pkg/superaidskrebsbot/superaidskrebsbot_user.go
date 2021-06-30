@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/quiteawful/superaidskrebs-backend/internal/hashing"
 	"github.com/quiteawful/superaidskrebs-backend/internal/mailer"
+	"github.com/quiteawful/superaidskrebs-backend/pkg/db"
 	"github.com/quiteawful/superaidskrebs-backend/pkg/db/postgresmodel"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	tb "gopkg.in/tucnak/telebot.v2"
@@ -93,7 +94,7 @@ func (s *SAKBot) handleRegister(m *tb.Message, mysplit []string) {
 	}
 	fmt.Println(u)
 	id := uuid.New()
-	a := &postgresmodel.Activation{Time: time.Now(), Key: id.String(), UserID: u.UserID}
+	a := &postgresmodel.OnetimePad{Time: time.Now().Add(2 * 24 * time.Hour), Key: id.String(), UserID: u.UserID, Type: db.PadTypeActivation}
 	err = a.Insert(context.Background(), s.db.DB, boil.Infer())
 	if err != nil {
 		log.Printf("Error Activation for User: %v Error: %v", uname, err)

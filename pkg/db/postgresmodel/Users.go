@@ -72,17 +72,17 @@ var UserWhere = struct {
 
 // UserRels is where relationship names are stored.
 var UserRels = struct {
-	UserIDActivations     string
 	UserIDChannelhasUsers string
+	UserIDOnetimePads     string
 }{
-	UserIDActivations:     "UserIDActivations",
 	UserIDChannelhasUsers: "UserIDChannelhasUsers",
+	UserIDOnetimePads:     "UserIDOnetimePads",
 }
 
 // userR is where relationships are stored.
 type userR struct {
-	UserIDActivations     ActivationSlice     `boil:"UserIDActivations" json:"UserIDActivations" toml:"UserIDActivations" yaml:"UserIDActivations"`
 	UserIDChannelhasUsers ChannelhasUserSlice `boil:"UserIDChannelhasUsers" json:"UserIDChannelhasUsers" toml:"UserIDChannelhasUsers" yaml:"UserIDChannelhasUsers"`
+	UserIDOnetimePads     OnetimePadSlice     `boil:"UserIDOnetimePads" json:"UserIDOnetimePads" toml:"UserIDOnetimePads" yaml:"UserIDOnetimePads"`
 }
 
 // NewStruct creates a new relationship struct
@@ -375,27 +375,6 @@ func (q userQuery) Exists(ctx context.Context, exec boil.ContextExecutor) (bool,
 	return count > 0, nil
 }
 
-// UserIDActivations retrieves all the Activation's Activations with an executor via UserID column.
-func (o *User) UserIDActivations(mods ...qm.QueryMod) activationQuery {
-	var queryMods []qm.QueryMod
-	if len(mods) != 0 {
-		queryMods = append(queryMods, mods...)
-	}
-
-	queryMods = append(queryMods,
-		qm.Where("\"Activations\".\"UserID\"=?", o.UserID),
-	)
-
-	query := Activations(queryMods...)
-	queries.SetFrom(query.Query, "\"Activations\"")
-
-	if len(queries.GetSelect(query.Query)) == 0 {
-		queries.SetSelect(query.Query, []string{"\"Activations\".*"})
-	}
-
-	return query
-}
-
 // UserIDChannelhasUsers retrieves all the ChannelhasUser's ChannelhasUsers with an executor via UserID column.
 func (o *User) UserIDChannelhasUsers(mods ...qm.QueryMod) channelhasUserQuery {
 	var queryMods []qm.QueryMod
@@ -417,102 +396,25 @@ func (o *User) UserIDChannelhasUsers(mods ...qm.QueryMod) channelhasUserQuery {
 	return query
 }
 
-// LoadUserIDActivations allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for a 1-M or N-M relationship.
-func (userL) LoadUserIDActivations(ctx context.Context, e boil.ContextExecutor, singular bool, maybeUser interface{}, mods queries.Applicator) error {
-	var slice []*User
-	var object *User
-
-	if singular {
-		object = maybeUser.(*User)
-	} else {
-		slice = *maybeUser.(*[]*User)
+// UserIDOnetimePads retrieves all the OnetimePad's OnetimePads with an executor via UserID column.
+func (o *User) UserIDOnetimePads(mods ...qm.QueryMod) onetimePadQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
 	}
 
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &userR{}
-		}
-		args = append(args, object.UserID)
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &userR{}
-			}
-
-			for _, a := range args {
-				if a == obj.UserID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.UserID)
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(
-		qm.From(`Activations`),
-		qm.WhereIn(`Activations.UserID in ?`, args...),
+	queryMods = append(queryMods,
+		qm.Where("\"OnetimePads\".\"UserID\"=?", o.UserID),
 	)
-	if mods != nil {
-		mods.Apply(query)
+
+	query := OnetimePads(queryMods...)
+	queries.SetFrom(query.Query, "\"OnetimePads\"")
+
+	if len(queries.GetSelect(query.Query)) == 0 {
+		queries.SetSelect(query.Query, []string{"\"OnetimePads\".*"})
 	}
 
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load Activations")
-	}
-
-	var resultSlice []*Activation
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice Activations")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results in eager load on Activations")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for Activations")
-	}
-
-	if len(activationAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-	if singular {
-		object.R.UserIDActivations = resultSlice
-		for _, foreign := range resultSlice {
-			if foreign.R == nil {
-				foreign.R = &activationR{}
-			}
-			foreign.R.UserIDUser = object
-		}
-		return nil
-	}
-
-	for _, foreign := range resultSlice {
-		for _, local := range slice {
-			if local.UserID == foreign.UserID {
-				local.R.UserIDActivations = append(local.R.UserIDActivations, foreign)
-				if foreign.R == nil {
-					foreign.R = &activationR{}
-				}
-				foreign.R.UserIDUser = local
-				break
-			}
-		}
-	}
-
-	return nil
+	return query
 }
 
 // LoadUserIDChannelhasUsers allows an eager lookup of values, cached into the
@@ -613,56 +515,101 @@ func (userL) LoadUserIDChannelhasUsers(ctx context.Context, e boil.ContextExecut
 	return nil
 }
 
-// AddUserIDActivations adds the given related objects to the existing relationships
-// of the User, optionally inserting them as new records.
-// Appends related to o.R.UserIDActivations.
-// Sets related.R.UserIDUser appropriately.
-func (o *User) AddUserIDActivations(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*Activation) error {
-	var err error
-	for _, rel := range related {
-		if insert {
-			rel.UserID = o.UserID
-			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
-				return errors.Wrap(err, "failed to insert into foreign table")
-			}
-		} else {
-			updateQuery := fmt.Sprintf(
-				"UPDATE \"Activations\" SET %s WHERE %s",
-				strmangle.SetParamNames("\"", "\"", 1, []string{"UserID"}),
-				strmangle.WhereClause("\"", "\"", 2, activationPrimaryKeyColumns),
-			)
-			values := []interface{}{o.UserID, rel.Time}
+// LoadUserIDOnetimePads allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (userL) LoadUserIDOnetimePads(ctx context.Context, e boil.ContextExecutor, singular bool, maybeUser interface{}, mods queries.Applicator) error {
+	var slice []*User
+	var object *User
 
-			if boil.IsDebug(ctx) {
-				writer := boil.DebugWriterFrom(ctx)
-				fmt.Fprintln(writer, updateQuery)
-				fmt.Fprintln(writer, values)
-			}
-			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-				return errors.Wrap(err, "failed to update foreign table")
-			}
-
-			rel.UserID = o.UserID
-		}
-	}
-
-	if o.R == nil {
-		o.R = &userR{
-			UserIDActivations: related,
-		}
+	if singular {
+		object = maybeUser.(*User)
 	} else {
-		o.R.UserIDActivations = append(o.R.UserIDActivations, related...)
+		slice = *maybeUser.(*[]*User)
 	}
 
-	for _, rel := range related {
-		if rel.R == nil {
-			rel.R = &activationR{
-				UserIDUser: o,
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &userR{}
+		}
+		args = append(args, object.UserID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &userR{}
 			}
-		} else {
-			rel.R.UserIDUser = o
+
+			for _, a := range args {
+				if a == obj.UserID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.UserID)
 		}
 	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`OnetimePads`),
+		qm.WhereIn(`OnetimePads.UserID in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load OnetimePads")
+	}
+
+	var resultSlice []*OnetimePad
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice OnetimePads")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on OnetimePads")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for OnetimePads")
+	}
+
+	if len(onetimePadAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.UserIDOnetimePads = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &onetimePadR{}
+			}
+			foreign.R.UserIDUser = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.UserID == foreign.UserID {
+				local.R.UserIDOnetimePads = append(local.R.UserIDOnetimePads, foreign)
+				if foreign.R == nil {
+					foreign.R = &onetimePadR{}
+				}
+				foreign.R.UserIDUser = local
+				break
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -710,6 +657,59 @@ func (o *User) AddUserIDChannelhasUsers(ctx context.Context, exec boil.ContextEx
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &channelhasUserR{
+				UserIDUser: o,
+			}
+		} else {
+			rel.R.UserIDUser = o
+		}
+	}
+	return nil
+}
+
+// AddUserIDOnetimePads adds the given related objects to the existing relationships
+// of the User, optionally inserting them as new records.
+// Appends related to o.R.UserIDOnetimePads.
+// Sets related.R.UserIDUser appropriately.
+func (o *User) AddUserIDOnetimePads(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*OnetimePad) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.UserID = o.UserID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"OnetimePads\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"UserID"}),
+				strmangle.WhereClause("\"", "\"", 2, onetimePadPrimaryKeyColumns),
+			)
+			values := []interface{}{o.UserID, rel.Time}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.UserID = o.UserID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &userR{
+			UserIDOnetimePads: related,
+		}
+	} else {
+		o.R.UserIDOnetimePads = append(o.R.UserIDOnetimePads, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &onetimePadR{
 				UserIDUser: o,
 			}
 		} else {
