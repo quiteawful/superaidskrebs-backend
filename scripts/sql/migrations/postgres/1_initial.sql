@@ -12,6 +12,7 @@ CREATE TABLE "Users" (
 	"Username" TEXT NOT NULL,
 	"Email" TEXT NOT NULL,
 	"Passwort" TEXT NOT NULL,
+	"Active" Boolean NOT NULL DEFAULT 'false',
 	CONSTRAINT "Users_pk" PRIMARY KEY ("UserID")
 );
 

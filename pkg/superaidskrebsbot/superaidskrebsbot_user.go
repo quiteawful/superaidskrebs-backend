@@ -14,6 +14,7 @@ import (
 	"github.com/quiteawful/superaidskrebs-backend/internal/mailer"
 	"github.com/quiteawful/superaidskrebs-backend/pkg/db"
 	"github.com/quiteawful/superaidskrebs-backend/pkg/db/postgresmodel"
+	"github.com/volatiletech/sqlboiler/boil/qm"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
@@ -38,6 +39,9 @@ func (s *SAKBot) handleUserCommands(m *tb.Message) {
 			switch mysplit[1] {
 			case "register":
 				s.handleRegister(m, mysplit)
+				return
+			case "activate":
+				s.handleActivate(m, mysplit)
 				return
 			}
 		}
@@ -108,4 +112,43 @@ func (s *SAKBot) handleRegister(m *tb.Message, mysplit []string) {
 		return
 	}
 	s.sendMessagetoUser(m.Sender, "User created and activation Mail sent")
+}
+
+func (s *SAKBot) handleActivate(m *tb.Message, mysplit []string) {
+	if len(mysplit) != 3 {
+		s.sendWrongarguments(m.Sender, "/user activate code")
+		return
+	}
+	code := mysplit[2]
+	uname := m.Sender.Username
+	w := fmt.Sprintf("%v = ?", postgresmodel.OnetimePadColumns.Type)
+	o, err := postgresmodel.OnetimePads(postgresmodel.OnetimePadWhere.Key.EQ(code), qm.And(w, db.PadTypeActivation)).One(context.Background(), s.db.DB)
+	if err != nil {
+		log.Printf("Error querying for activation code: %v Error: %v", uname, err)
+		s.sendErrorarguments(m.Sender, "Error activating User, contact Bot Admin")
+		return
+	}
+	u, err := postgresmodel.FindUser(context.Background(), s.db.DB, o.UserID)
+	if err != nil {
+		log.Printf("Error querying for activation User: %v Error: %v", uname, err)
+		s.sendErrorarguments(m.Sender, "Error activating User, contact Bot Admin")
+		return
+	}
+	if uname != u.Username {
+		log.Printf("Error activtion User and username differen: %v vs %v", u.Username, uname)
+		s.sendErrorarguments(m.Sender, "Error activating User, contact Bot Admin")
+		return
+	}
+	u.Active = true
+	_, err = u.Update(context.Background(), s.db.DB, boil.Whitelist(postgresmodel.UserColumns.Active))
+	if err != nil {
+		log.Printf("Error setting User active: %v Error: %v", uname, err)
+		s.sendErrorarguments(m.Sender, "Error activating User, contact Bot Admin")
+		return
+	}
+	_, err = o.Delete(context.Background(), s.db.DB)
+	if err != nil {
+		log.Printf("Error deleting activation pad: Error: %v", err)
+	}
+	s.sendMessagetoUser(m.Sender, "User account activated")
 }

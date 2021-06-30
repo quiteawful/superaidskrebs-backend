@@ -27,6 +27,7 @@ type User struct {
 	Username string `boil:"Username" json:"Username" toml:"Username" yaml:"Username"`
 	Email    string `boil:"Email" json:"Email" toml:"Email" yaml:"Email"`
 	Passwort string `boil:"Passwort" json:"Passwort" toml:"Passwort" yaml:"Passwort"`
+	Active   bool   `boil:"Active" json:"Active" toml:"Active" yaml:"Active"`
 
 	R *userR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L userL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -37,11 +38,13 @@ var UserColumns = struct {
 	Username string
 	Email    string
 	Passwort string
+	Active   string
 }{
 	UserID:   "UserID",
 	Username: "Username",
 	Email:    "Email",
 	Passwort: "Passwort",
+	Active:   "Active",
 }
 
 var UserTableColumns = struct {
@@ -49,25 +52,38 @@ var UserTableColumns = struct {
 	Username string
 	Email    string
 	Passwort string
+	Active   string
 }{
 	UserID:   "Users.UserID",
 	Username: "Users.Username",
 	Email:    "Users.Email",
 	Passwort: "Users.Passwort",
+	Active:   "Users.Active",
 }
 
 // Generated where
+
+type whereHelperbool struct{ field string }
+
+func (w whereHelperbool) EQ(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.EQ, x) }
+func (w whereHelperbool) NEQ(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.NEQ, x) }
+func (w whereHelperbool) LT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.LT, x) }
+func (w whereHelperbool) LTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.LTE, x) }
+func (w whereHelperbool) GT(x bool) qm.QueryMod  { return qmhelper.Where(w.field, qmhelper.GT, x) }
+func (w whereHelperbool) GTE(x bool) qm.QueryMod { return qmhelper.Where(w.field, qmhelper.GTE, x) }
 
 var UserWhere = struct {
 	UserID   whereHelperint
 	Username whereHelperstring
 	Email    whereHelperstring
 	Passwort whereHelperstring
+	Active   whereHelperbool
 }{
 	UserID:   whereHelperint{field: "\"Users\".\"UserID\""},
 	Username: whereHelperstring{field: "\"Users\".\"Username\""},
 	Email:    whereHelperstring{field: "\"Users\".\"Email\""},
 	Passwort: whereHelperstring{field: "\"Users\".\"Passwort\""},
+	Active:   whereHelperbool{field: "\"Users\".\"Active\""},
 }
 
 // UserRels is where relationship names are stored.
@@ -94,9 +110,9 @@ func (*userR) NewStruct() *userR {
 type userL struct{}
 
 var (
-	userAllColumns            = []string{"UserID", "Username", "Email", "Passwort"}
+	userAllColumns            = []string{"UserID", "Username", "Email", "Passwort", "Active"}
 	userColumnsWithoutDefault = []string{"Username", "Email", "Passwort"}
-	userColumnsWithDefault    = []string{"UserID"}
+	userColumnsWithDefault    = []string{"UserID", "Active"}
 	userPrimaryKeyColumns     = []string{"UserID"}
 )
 
