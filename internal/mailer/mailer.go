@@ -52,3 +52,14 @@ func SendCode(address string, username string, code string) error {
 	}
 	return nil
 }
+
+func SendPassword(address string, username string, password string) error {
+	message :=
+		fmt.Sprintf("Hi %v, \n\nhere is your new password: \n%v\n Change it as fast as you can as EMail is not save for transporting passwords. \n\nYours Superaidskrebs Bot",
+			username, password)
+	err := sendMail(address, "Superaidskrebs Password reset", message)
+	if err != nil {
+		return errors.New("Error sending password: " + err.Error())
+	}
+	return nil
+}

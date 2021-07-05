@@ -1,12 +1,14 @@
 package superaidskrebsbot
 
 import (
+	"context"
 	"errors"
 	"log"
 	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/quiteawful/superaidskrebs-backend/pkg/config"
+	"github.com/quiteawful/superaidskrebs-backend/pkg/db/postgresmodel"
 	tb "gopkg.in/tucnak/telebot.v2"
 )
 
@@ -68,6 +70,29 @@ func CreateNewBot(config config.TelegramConf, db *sqlx.DB, filestoreconf config.
 	return &sakbot, nil
 }
 
+func (s *SAKBot) RemovePads() {
+	pp, err := postgresmodel.OnetimePads().All(context.Background(), s.db.DB)
+	if err != nil {
+		log.Printf("Ticker Error: Error getting OnetimePads: %v", err)
+	}
+	for _, p := range pp {
+		if p.Time.After(time.Now()) {
+			_, err := p.Delete(context.Background(), s.db.DB)
+			if err != nil {
+				log.Printf("Ticker Error: Error deleting OnetimePads: %v", err)
+			}
+		}
+	}
+}
+
+func (s *SAKBot) RemovePadsTicker() {
+	ticker := time.NewTicker(1 * time.Minute)
+	for range ticker.C {
+		s.RemovePads()
+	}
+}
 func (s *SAKBot) Start() {
+	s.RemovePads()
+	go s.RemovePadsTicker()
 	s.bot.Start()
 }
